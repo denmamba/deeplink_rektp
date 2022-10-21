@@ -1,5 +1,5 @@
 ## GADAI DIGITAL
-Aplikasi Gadai Digital digunakan untuk membantu perhitungan nilai pinjaman yang sesuai dengan barang yang digadaikan.
+Aplikasi Add on REKTP untuk test API ktp elektronik yang di scan. Custom pihak ketiga
 
 ## Signature
 

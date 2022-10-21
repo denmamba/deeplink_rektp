@@ -1,25 +1,29 @@
 import 'dart:convert';
-import "dart:async";
-import 'package:carousel_slider/carousel_slider.dart';
+import 'dart:io';
 import 'package:flutter/services.dart';
-import 'package:meet_network_image/meet_network_image.dart';
-import 'package:pegadaian/login.dart';
-import 'package:pegadaian/splash.dart';
-import 'package:pegadaian/validation_ktp.dart';
+import 'package:path_provider/path_provider.dart';
+// ignore: import_of_legacy_library_into_null_safe
+// ignore: import_of_legacy_library_into_null_safe
+import 'package:test_deeplink/splash.dart';
 import 'package:flutter/material.dart';
-import 'package:uni_links/uni_links.dart';
-import 'camera.dart';
-import 'utils.dart' as util;
-import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:pegadaian/transitions/enter_exit_route.dart';
-import 'package:intent/intent.dart' as android_intent;
-import 'package:intent/action.dart' as android_action;
-//import 'package:autocomplete_textfield/autocomplete_textfield.dart';
-import 'package:double_back_to_close_app/double_back_to_close_app.dart';
-import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
-import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:test_deeplink/models/util.dart' as util;
+// ignore: import_of_legacy_library_into_null_safe
+import 'package:http/http.dart' as http;
+// ignore: import_of_legacy_library_into_null_safe
+import 'package:permission_handler/permission_handler.dart';
+import 'package:lumberdash/lumberdash.dart';
+import 'package:file_lumberdash/file_lumberdash.dart';
+// ignore: import_of_legacy_library_into_null_safe
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+const _url = 'rektp://read?type=0';
+//const _url = 'rektp://read?log_id=1&package=surveyor://send';
+//rektp://read?type=0
+//'rektp://read?log_id=3';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
@@ -28,55 +32,92 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Gadai Digital',
+      title: 'LOG EKTP',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
           brightness: Brightness.light,
-          primarySwatch: Colors.green,
-          accentColor: Colors.green.shade500),
+          primarySwatch: Colors.deepOrange,
+          accentColor: Colors.orange),
       routes: {
-        '/': (_) => LoginPage(title: 'Login Gadai Digital'), //SplashScreen(),
-        '/home': (_) {
-          return MyHomePage(title: 'Gadai Digital');
-        },
-        //'/upload': (_) => UploadFilePage(),
-        //'/detailNasabah': (_) => DetailNasabah(data: '')
+        '/': (_) => LoginPage(),
       },
+      builder: EasyLoading.init(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  final String title;
-  final Map rowSiswa;
-  final String action; //. pembeda antara "edit" / "new"
+  final String? kodenik;
+  final String? arrKTP;
+  final String? arrDeviceToken;
+  final String? kuid;
+  final String? knik;
+  final String? knama;
+  final String? ktempatLahir;
+  final String? kTglLahir;
+  final String? kjk;
+  final String? kAlamat;
+  final String? krt;
+  final String? krw;
+  final String? kKelurahan;
+  final String? kKecamatan;
+  final String? kAgama;
+  final String? kStatusKawin;
+  final String? kPekerjaan;
+  final String? kWarganegara;
+  final String? kKota;
+  final String? kPhoto;
+  final String? kTtd;
+  final String? txtSerialNumber;
+  final String? txtToken;
+  final String? Responsenya;
 
-  MyHomePage({Key key, this.title, this.rowSiswa, this.action})
-      : super(key: key);
+  MyHomePage({
+    Key? key,
+    this.kodenik,
+    this.arrKTP,
+    this.arrDeviceToken,
+    this.kuid,
+    this.knik,
+    this.knama,
+    this.ktempatLahir,
+    this.kTglLahir,
+    this.kjk,
+    this.kAlamat,
+    this.krt,
+    this.krw,
+    this.kKelurahan,
+    this.kKecamatan,
+    this.kAgama,
+    this.kStatusKawin,
+    this.kPekerjaan,
+    this.kWarganegara,
+    this.txtSerialNumber,
+    this.txtToken,
+    this.Responsenya,
+    this.kKota,
+    this.kPhoto,
+    this.kTtd,
+  }) : super(key: key);
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with Validation {
-  bool _ready = false;
-  bool _flagAllowSearch = true;
-  List<dynamic> _lstDataSiswa = [];
-  TextEditingController _txtSearch = TextEditingController();
-
+class _MyHomePageState extends State<MyHomePage> {
   final formKey = GlobalKey<FormState>();
 
   List<String> added = [];
-  String currentText = "ddd";
-  //GlobalKey<AutoCompleteTextFieldState<String>> key = new GlobalKey();
-  final currencyFormatter = NumberFormat.currency(locale: 'ID');
+  //List<dynamic> _listDataKTP = [];
+  late String currentText;
 
-  bool _hasilscanKTP = false;
-  double persentase;
-  double kadarEmasnya;
-  String dataku;
+  late String dataku;
   String ktpID = '0';
-  String nik;
+  String kodesdb = '';
+  late String nokunci;
+  late String nik;
+  late String txtSDBMaster;
+  late String txtKunciMaster;
   String nama = '';
   String alamat = '';
   String jk = '';
@@ -90,1523 +131,346 @@ class _MyHomePageState extends State<MyHomePage> with Validation {
   String statusKawin = '';
   String pekerjaan = '';
   String wargaNegara = '';
-  String _chosenValue;
-  String typeBarang = '';
-  String hargaJual = '0';
-  String pinjaman = '0';
-  String nettoBarang = '0';
-  String kadarEmas = '0';
 
-  TextEditingController _nik = TextEditingController();
-  TextEditingController _nama;
-  TextEditingController _alamat;
-  TextEditingController _jk;
-  TextEditingController _tempatLahir;
-  TextEditingController _tglLahir;
-  TextEditingController _rt;
-  TextEditingController _rw;
-  TextEditingController _kelurahan;
-  TextEditingController _kecamatan;
-  TextEditingController _agama;
-  TextEditingController _statusKawin;
-  TextEditingController _pekerjaan;
-  TextEditingController _wargaNegara;
-  TextEditingController _typeBarang;
+  // ignore: non_constant_identifier_names
+  String waiting_message = '';
+  String response_message = '';
+  var tampilDaftarBaru;
+  var pecahKTP = '';
+  var dataKtp;
+  List<Map<String, dynamic>> dataKyc = [];
+  String dummyData = '';
+  //final DbHelper _helper = new DbHelper();
 
-  TextEditingController _nettoBarang = TextEditingController();
-  TextEditingController _hargaJual = TextEditingController();
-  TextEditingController _maxPinjaman = TextEditingController();
-  TextEditingController _pinjaman = TextEditingController();
-  TextEditingController _kadarEmas = TextEditingController();
+  //List<BluetoothDevice> _devices = [];
+  late String pathImage;
+  // ignore: non_constant_identifier_names
+  String printer_status = '';
+  int prefReqScan = 0;
 
-  int _selectedGadai;
-  int _selectedHP;
-  int _selectedElektro;
-  int _selectedTenor;
-  int _biayaAdmin = 25000;
+  final Permission _permissionGroup = Permission.storage;
 
-  final formatCurrency =
-      new NumberFormat.currency(locale: 'id_ID', decimalDigits: 0, symbol: '');
-  //List<dynamic> _pilGadai = [];
-  List<String> _pilGadai = [
-    'Perhiasan',
-    'Logam Mulia',
-    'Handphone',
-    'Elektronik',
-    'Kendaraan Bermotor',
-  ];
-  List<dynamic> _merkElektronik = [];
-  List<dynamic> _merkHP = [];
-
-  List<double> _persentase = [
-    1,
-    1,
-    0.55,
-    0.55,
-  ];
-
-  List<int> _tenor = [
-    0,
-    1,
-    2,
-    3,
-    4,
-  ];
-
-  List<dynamic> _kadar = [];
-  final List<String> berkas = ['Barang-1', 'Barang-2'];
+  get imagen => null;
 
   @override
   void initState() {
-    _loadData().then((d) {
-      setState(() {
-        initUniLinks();
-        _pinjaman.text == '' ? _pinjaman.text = '0' : print("");
-        _selectedTenor == null ? _selectedTenor = 0 : print("");
-      });
-      if (d is String) {
-        util.showAlert(context, d, "Alert").then((d) {
-          Map<String, String> mRequest = {
-            "cmd": "logout",
-            "_user": util.UserData.userName,
-            "_session": util.UserData.userSession,
-          };
-          util.httpPost(util.url_api, mRequest).then((data) {
-            Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (BuildContext context) => LoginPage()));
-          });
-        });
-      } else if (d is bool) {}
-    });
-    _loadElektronik();
-    _loadHP();
+    if (widget.knik != null) {
+      dataektp();
+      getPref();
+    }
     super.initState();
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
-  void showInSnackBar(String value) {
-    _scaffoldKey.currentState.showSnackBar(new SnackBar(
-        action: SnackBarAction(
-          label: 'Close',
-          textColor: Colors.white,
-          onPressed: () {
-            // Code to execute.
-          },
-        ),
-        duration: const Duration(milliseconds: 4500),
-        backgroundColor: Colors.red.shade600,
-        content: new Text(value)));
-    setState(() {});
-  }
+  dataektp() async {
+    _requestApi();
+    String _nik = widget.knik.toString();
+    String _fullName = widget.knama.toString();
+    String _bornDate = widget.kTglLahir.toString();
+    String _placeOfBirth = widget.ktempatLahir.toString();
+    String _gender = (widget.kjk == "PEREMPUAN") ? "female" : "male";
+    String _address = widget.kAlamat.toString();
+    String _province = "";
+    String _city = "";
+    String _district = widget.kKecamatan.toString();
+    String _subDistrict = widget.kKelurahan.toString();
+    String _rt = widget.krt.toString();
+    String _rw = widget.krw.toString();
+    String _religion = widget.kAgama.toString();
+    String _maritalStatus = widget.kStatusKawin.toString();
+    String _profession = widget.kPekerjaan.toString();
+    String _citizen = widget.kWarganegara.toString();
+    String _vendor = "ATT";
+    String _terminalId = "";
+    String _photo = widget.kPhoto.toString();
+    String _signature = widget.kTtd.toString();
+    String date = _bornDate.toString();
+    final dateList = date.split("-");
+    String txtTgl =
+        (dateList[0].length > 1) ? "${dateList[0]}" : "0${dateList[0]}";
+    String txtBulan =
+        (dateList[1].length > 1) ? "${dateList[1]}" : "0${dateList[1]}";
+    String txtTahun = "${dateList[2]}";
+    String _bod = "$txtTahun-$txtBulan-$txtTgl";
 
-  Future<bool> onExitApp(BuildContext context) {
-    return showDialog(
-          context: context,
-          child: AlertDialog(
-            title: Text('Exit'),
-            content: Text('Do you really want to logout?'),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-            actions: <Widget>[
-              FlatButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text('No'),
-              ),
-              FlatButton(
-                onPressed: () {
-                  //. logout dulu
-                  Map<String, String> mRequest = {
-                    "cmd": "logout",
-                    "_user": util.UserData.userName,
-                    "_session": util.UserData.userSession,
-                  };
-                  util.httpPost(util.url_api, mRequest).then((data) {
-                    Navigator.pop(context);
-                    Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (BuildContext context) => LoginPage()));
-                  });
-                },
-                child: Text('Yes'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
-
-  Future<dynamic> _loadData() async {
-    /*Map<String, String> mPilGadai = {
-      "_user": util.UserData.userName,
-      "_session": util.UserData.userSession,
-      "cmd": "get_pilihan_gadai",
-    };
-
-    String dataPilGadai = await util.httpPost(util.url_api, mPilGadai);
-    var jPilGadai = json.decode(dataPilGadai);
-    if (jPilGadai != null) {
-      int vStatus = jPilGadai["status"];
-      String vDesc = jPilGadai["desc"];
-      var vData = jPilGadai["data"];
-      if (vStatus == 1) {
-        _pilGadai = vData;
-      } else if (vStatus == -99) {
-        _pilGadai = [];
-        return vDesc;
-      } else {
-        _pilGadai = [];
-      }
-    }*/
-
-    return true;
-  }
-
-  Future<dynamic> _loadKadarEmas(String search) async {
-    Map<String, String> mKadarEmas = {
-      "_user": util.UserData.userName,
-      "_session": util.UserData.userSession,
-      "cmd": "get_pilihan_kadar",
-      "search": search,
-    };
-
-    String dataKadarEmas = await util.httpPost(util.url_api, mKadarEmas);
-    var jKadarEmas = json.decode(dataKadarEmas);
-    if (jKadarEmas != null) {
-      int vStatus = jKadarEmas["status"];
-      String vDesc = jKadarEmas["desc"];
-      var vData = jKadarEmas["data"];
-      if (vStatus == 1) {
-        _kadar = vData;
-      } else if (vStatus == -99) {
-        _kadar = [];
-        return vDesc;
-      } else {
-        _kadar = [];
-      }
-    }
-    print("pil kadar emas " + _kadar.toString());
-    return true;
-  }
-
-  Future<dynamic> _loadElektronik() async {
-    Map<String, String> mPilElektronik = {
-      "_user": util.UserData.userName,
-      "_session": util.UserData.userSession,
-      "cmd": "get_pilihan_elektronik",
-    };
-
-    String dataPilElektronik =
-        await util.httpPost(util.url_api, mPilElektronik);
-    var jPilElektronik = json.decode(dataPilElektronik);
-    if (jPilElektronik != null) {
-      int vStatus = jPilElektronik["status"];
-      String vDesc = jPilElektronik["desc"];
-      var vData = jPilElektronik["data"];
-      if (vStatus == 1) {
-        _merkElektronik = vData;
-      } else if (vStatus == -99) {
-        _merkElektronik = [];
-        return vDesc;
-      } else {
-        _merkElektronik = [];
-      }
-    }
-    //print("pil elektro " + _merkElektronik.toString());
-    //print("jumlah pilihan gadai " + _pilGadai.length.toString());
-    return true;
-  }
-
-  Future<dynamic> _loadHP() async {
-    Map<String, String> mPilHP = {
-      "_user": util.UserData.userName,
-      "_session": util.UserData.userSession,
-      "cmd": "get_pilihan_hp",
-    };
-
-    String dataPilHP = await util.httpPost(util.url_api, mPilHP);
-    var jPilHP = json.decode(dataPilHP);
-    if (jPilHP != null) {
-      int vStatus = jPilHP["status"];
-      String vDesc = jPilHP["desc"];
-      var vData = jPilHP["data"];
-      if (vStatus == 1) {
-        _merkHP = vData;
-      } else if (vStatus == -99) {
-        _merkHP = [];
-        return vDesc;
-      } else {
-        _merkHP = [];
-      }
-    }
-    //print("pil HP " + _merkHP.toString());
-    return true;
-  }
-
-  Future<dynamic> _refreshData() async {
-    setState(() {
-      showInSnackBar("yutiyuiuyi");
-    });
-
-    /*Map<String, String> mRequest = {
-      "_user": util.UserData.userName,
-      "_session": util.UserData.userSession,
-      "cmd": "get_data_perhalaman",
-      "search": search,
-      "limit": limit
-    };
-
-    String data = await util.httpPost(util.url_api, mRequest);
-    _ready = true;
-    var jObject = json.decode(data);
-    if (jObject != null) {
-      int vStatus = jObject["status"];
-      String vDesc = jObject["desc"];
-      //String v_cmd = jObject["cmd"];
-      var vData = jObject["data"];
-      if (vStatus == 1) {
-        //. success
-        _lstDataSiswa = vData;
-      } else if (vStatus == -99) {
-        //. expired
-        _lstDataSiswa = [];
-        return vDesc;
-      } else {
-        _lstDataSiswa = [];
-      }
-    }*/
-
-    return true;
-  }
-
-  /*List<Widget> _getRows() {
-    List<Widget> lstRow = [];
-    for (int i = 0; i < _lstDataSiswa.length; i++) {
-      var nomor = i + 1;
-      dynamic _r = _lstDataSiswa[i];
-      lstRow.add(
-        Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                semanticContainer: true,
-                clipBehavior: Clip.antiAliasWithSaveLayer,
-                elevation: 5,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      new Wrap(
-                        spacing: 5.0, // gap between adjacent chips
-                        runSpacing: 1.0, // gap between lines
-                        direction:
-                            Axis.horizontal, // main axis (rows or columns)
-                        children: <Widget>[
-                          new Chip(
-                              backgroundColor: Colors.blue.shade900,
-                              label: new Text(nomor.toString(),
-                                  style: TextStyle(color: Colors.white))),
-                        ],
-                      ),
-                      SizedBox(height: 15),
-                      Text("NAMA"),
-                      Divider(
-                        color: Colors.grey,
-                      ),
-                      new Container(
-                        padding: const EdgeInsets.all(5.0),
-                        width: MediaQuery.of(context).size.width * 0.8,
-                        child: new Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            new Text(_r["nama"].toString(),
-                                textAlign: TextAlign.left),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      Text("RUMAH"),
-                      Divider(
-                        color: Colors.grey,
-                      ),
-                      new Container(
-                        padding: const EdgeInsets.all(5.0),
-                        width: MediaQuery.of(context).size.width * 0.9,
-                        child: new Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            new Text(_r["alamat"].toString(),
-                                textAlign: TextAlign.left),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      Text("KANTOR"),
-                      Divider(
-                        color: Colors.grey,
-                      ),
-                      new Container(
-                        padding: const EdgeInsets.all(5.0),
-                        width: MediaQuery.of(context).size.width * 0.9,
-                        child: new Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            new Text(_r["alamat"].toString(),
-                                textAlign: TextAlign.left),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      Text("WAKTU PICKUP"),
-                      Divider(
-                        color: Colors.grey,
-                      ),
-                      Text(_r["jk"].toString()),
-                      SizedBox(height: 25),
-                      Container(
-                        height: 50,
-                        width: MediaQuery.of(context).size.width * 0.9,
-                        child: new RaisedButton(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(40.0),
-                          ),
-                          child: Text(
-                            "+ Pickup Document",
-                            style: TextStyle(fontSize: 14),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              EnterExitRoute(
-                                  exitPage: null,
-                                  enterPage: DetailNasabah(
-                                    data: _r["id"].toString() +
-                                        "|" +
-                                        _r["nama"].toString() +
-                                        "|" +
-                                        _r["alamat"].toString() +
-                                        "|" +
-                                        _r["jk"].toString(),
-                                  )),
-                              /*MaterialPageRoute(
-                                    builder: (context) => DetailNasabah(
-                                      data: _r["id"].toString() +
-                                          "|" +
-                                          _r["nama"].toString() +
-                                          "|" +
-                                          _r["alamat"].toString() +
-                                          "|" +
-                                          _r["jk"].toString(),
-                                    ),
-                                  )*/
-                            );
-                          },
-                          color: Colors.green.shade900,
-                          textColor: Colors.white,
-                          padding: EdgeInsets.all(8.0),
-                          splashColor: Colors.green,
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                    ],
-                  ),
-                )),
-          ],
-        ),
-      );
-    }
-
-    if (_lstDataSiswa.length == 0) {
-      //. no data
-      lstRow.add(Container(
-        height: 400,
-        child: Center(
-          child: Text(
-            "Data Kosong",
-            style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.withOpacity(0.7)),
-          ),
-        ),
-      ));
-    }
-
-    return lstRow;
-  }*/
-
-  /*Widget _getTable() {
-    return Padding(
-      padding: EdgeInsets.all(8.0),
-      child: Wrap(
-        alignment: WrapAlignment.end,
-        children: _ready == true
-            ? _getRows()
-            : <Widget>[
-                Container(
-                    height: 500,
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ))
-              ],
+    Directory? appDocDir = await getExternalStorageDirectory();
+    String appDocPath = appDocDir!.path;
+    final currentDate = DateTime.now();
+    final fileName =
+        '${currentDate.year}-${currentDate.month}-${currentDate.day}-${currentDate.microsecond}-${_fullName}-logs';
+    putLumberdashToWork(withClients: [
+      FileLumberdash(
+        filePath: '$appDocPath/$fileName.txt',
       ),
-    );
-  }*/
-
-  List<String> lstRow = [];
-  RefreshController _refreshController =
-      RefreshController(initialRefresh: false);
-
-  void _onRefresh() async {
-    // monitor network fetch
-    await Future.delayed(Duration(milliseconds: 1000));
-    //var _limit = _getRows().length + 1;
-    //showInSnackBar("Data");
-    _refreshData().then((d) {
-      setState(() {});
-    });
-    _refreshController.refreshCompleted();
+    ]);
+    print('save file to $appDocPath/$fileName.txt');
+    logMessage('${widget.arrKTP.toString()}');
   }
-
-  /*void _onLoading() async {
-    // monitor network fetch
-    await Future.delayed(Duration(milliseconds: 1000));
-    //var _limit = _getRows().length + 1;
-    //showInSnackBar("Data");
-    _refreshData().then((d) {
-      setState(() {});
-    });
-    _refreshController.loadComplete();
-  }*/
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () => onExitApp(context),
-      child: Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          title: Text(widget.title),
-          actions: <Widget>[_scanKTP()],
-        ),
-        body: SmartRefresher(
-            enablePullDown: false,
-            enablePullUp: false,
-            header: WaterDropHeader(),
-            controller: _refreshController,
-            //onRefresh: _onRefresh,
-            //onLoading: _onLoading,
-            child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Stack(
-                  //mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[_formPengajuan()],
-                ))),
+    return Scaffold(
+      key: _scaffoldKey,
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        title: Text('LOG EKTP DEMO VERSION'),
+        /*actions: [
+          PopupMenuButton<int>(
+            onSelected: (item) => onSelected(context, item),
+            itemBuilder: (context) => [
+              PopupMenuItem<int>(
+                value: 0,
+                child: (printer_status == "Connected")
+                    ? Text('Nonaktifkan Printer')
+                    : Text('Aktifkan Printer'),
+              ),
+            ],
+          )
+        ],*/
       ),
+      body: Container(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Stack(
+            children: <Widget>[
+              // 30a5129314f7d1b7//16 digit //12f6a893bc54e1c4 //315a5a789f252eee //_identifier // 'A130360S00300020'
+              _formPengajuan(),
+            ],
+          )),
     );
-  }
-
-  initUniLinks() async {
-    try {
-      var initialLink = await getInitialLink();
-      if (initialLink != null) {
-        var a = [];
-        var b = [];
-        a = initialLink.split('surveyor://send?logs=');
-        b.add(a[1]);
-        dynamic c = b;
-        var dataKtp = json.decode(c[0]);
-        _nik = TextEditingController(text: dataKtp["nik"].toString());
-        _nama = TextEditingController(text: dataKtp["nama"].toString());
-        _tempatLahir = TextEditingController(text: dataKtp["pob"].toString());
-        _tglLahir = TextEditingController(text: dataKtp["dob"].toString());
-        _jk = TextEditingController(text: dataKtp["jenis_kelamin"].toString());
-        _alamat = TextEditingController(text: dataKtp["alamat"].toString());
-        _rt = TextEditingController(text: dataKtp["rt"].toString());
-        _rw = TextEditingController(text: dataKtp["rw"].toString());
-        _kelurahan =
-            TextEditingController(text: dataKtp["kelurahan_desa"].toString());
-        _kecamatan =
-            TextEditingController(text: dataKtp["kecamatan"].toString());
-        _agama = TextEditingController(text: dataKtp["agama"].toString());
-        _statusKawin = TextEditingController(
-            text: dataKtp["status_perkawinan"].toString());
-        _pekerjaan =
-            TextEditingController(text: dataKtp["pekerjaan"].toString());
-        _wargaNegara =
-            TextEditingController(text: dataKtp["kewarganegaraan"].toString());
-
-        FocusScope.of(context).nextFocus();
-        print('datanya $dataKtp');
-        _hasilscanKTP = true;
-        //await prefs.setInt('dataKtp', dataKtp);
-      } else {
-        _hasilscanKTP = true;
-        print('hasil scan ktp false');
-      }
-    } on PlatformException {
-      print('Failed to get initial link.');
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  Widget _scanKTP() {
-    return FlatButton(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        color: Colors.green,
-        textColor: Colors.white,
-        padding: EdgeInsets.all(15.0),
-        splashColor: Colors.green.shade400,
-        onPressed: () => android_intent.Intent()
-          ..setAction(android_action.Action.ACTION_VIEW)
-          ..setData(Uri.parse("rektp://read?log_id=1"))
-          ..startActivityForResult().then(
-            (logs) => print(logs),
-            onError: (e) => print(e.toString()),
-          ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            Icon(Icons.scanner),
-            SizedBox(width: 9),
-            Text('Scan KTP')
-          ],
-        ));
   }
 
   Widget _formPengajuan() {
-    return DoubleBackToCloseApp(
-        snackBar: const SnackBar(
-          content: Text('Tap back again to leave'),
-          backgroundColor: Colors.redAccent,
-        ),
-        child: SingleChildScrollView(
-            reverse: true,
-            child: Padding(
-                padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom),
-                child: Form(
-                    key: formKey, //MENGGUNAKAN GLOBAL KEY
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Container(
-                          child: Column(
-                            children: <Widget>[
-                              SizedBox(height: 30),
-                              nikField(),
-                              SizedBox(height: 10),
-                              nameField(),
-                              SizedBox(height: 10),
-                              tgllahirField(),
-                              SingleChildScrollView(
-                                child: Column(children: <Widget>[
-                                  Column(
-                                    //shrinkWrap: true,
-                                    children: <Widget>[
-                                      ListTile(
-                                        title: Text('Layanan Gadai'),
-                                      ),
-                                      Container(
-                                        height: 50.0,
-                                        child: new ListView(
-                                            scrollDirection: Axis.horizontal,
-                                            children: <Widget>[
-                                              Container(
-                                                height: 30,
-                                                child:
-                                                    _buildChipsGadai(context),
-                                              ),
-                                            ]),
-                                      ),
-                                      _selectedGadai == 2
-                                          ? Column(
-                                              children: <Widget>[
-                                                ListTile(
-                                                  title: Text('Merk'),
-                                                ),
-                                                Container(
-                                                  height: 50.0,
-                                                  child: new ListView(
-                                                      scrollDirection:
-                                                          Axis.horizontal,
-                                                      children: <Widget>[
-                                                        Container(
-                                                          height: 30,
-                                                          child: _buildChipsHP(
-                                                              context),
-                                                        ),
-                                                      ]),
-                                                )
-                                              ],
-                                            )
-                                          : Text(''),
-                                      _selectedGadai == 3
-                                          ? Column(
-                                              children: <Widget>[
-                                                ListTile(
-                                                  title: Text('Merk'),
-                                                ),
-                                                Container(
-                                                  height: 50.0,
-                                                  child: new ListView(
-                                                      scrollDirection:
-                                                          Axis.horizontal,
-                                                      children: <Widget>[
-                                                        Container(
-                                                          height: 30,
-                                                          child:
-                                                              _buildChipsElektro(
-                                                                  context),
-                                                        ),
-                                                      ]),
-                                                )
-                                              ],
-                                            )
-                                          : Text(''),
-                                    ],
-                                  ),
-                                ]),
-                              ),
-                              _selectedGadai == 0 || _selectedGadai == 1
-                                  ? Column(
-                                      children: <Widget>[
-                                        SizedBox(height: 15),
-                                        kadarEmasField(),
-                                        SizedBox(height: 15),
-                                        nettoField(),
-                                        SizedBox(height: 15),
-                                      ],
-                                    )
-                                  : SizedBox(height: 0),
-                              _selectedGadai == 2 || _selectedGadai == 3
-                                  ? _selectedElektro != null ||
-                                          _selectedHP != null
-                                      ? Column(
-                                          children: <Widget>[
-                                            SizedBox(height: 15),
-                                            typeBarangField(),
-                                            SizedBox(height: 15),
-                                            hargaPasarField(_selectedGadai),
-                                            SizedBox(height: 15),
-                                          ],
-                                        )
-                                      : SizedBox(height: 0)
-                                  : SizedBox(height: 0),
-                              ketPinjamanMax(),
-                              SizedBox(height: 20),
-                              pinjamanField(),
-                              SizedBox(height: 20),
-                              Column(
-                                children: <Widget>[
-                                  ListTile(
-                                    title: Text('Tenor'),
-                                  ),
-                                  Container(
-                                    height: 50.0,
-                                    child: new ListView(
-                                        scrollDirection: Axis.horizontal,
-                                        children: <Widget>[
-                                          Container(
-                                            height: 30,
-                                            child: _buildChipsTenor(context),
-                                          ),
-                                        ]),
-                                  )
-                                ],
-                              ),
-                              SizedBox(height: 20),
-                              _selectedTenor > 0
-                                  ? ketCicilan()
-                                  : SizedBox(height: 0),
-                              SizedBox(height: 20),
-                              _nik.text != ''
-                                  ? fotoProduk()
-                                  : SizedBox(height: 0),
-                              SizedBox(height: 20),
-
-                              //loadButton(context),
-                              _hasilscanKTP == true
-                                  ? saveButton(context)
-                                  : SizedBox(height: 0),
-                              SizedBox(height: 30),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 15)
-                      ],
-                    )))));
-  }
-
-  Widget saveButton(context) {
-    //var aRow = widget.data.split("|");
-    return RaisedButton(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        color: Colors.green.shade700,
-        textColor: Colors.white,
-        padding: EdgeInsets.all(15.0),
-        splashColor: Colors.green.shade500,
-        onPressed: () {
-          if (formKey.currentState.validate()) {
-            //showInSnackBar(
-            //"Gadai Digital ini masih versi SIMULASI, sehingga data tidak bisa diteruskan ke server.");
-            FocusScope.of(context).unfocus();
-
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              builder: (context) {
-                final theme = Theme.of(context);
-                return SingleChildScrollView(
-                  child: Column(children: <Widget>[
-                    SizedBox(height: 30),
-                    printButton(context),
-                    SizedBox(height: 30),
-                  ]),
-                );
-              },
-            );
-            /*
-            formKey.currentState.save(); //MAKA FUNGSI SAVE() DIJALANKAN
-            Map<String, String> mRequest = {
-              "_user": util.UserData.userName,
-              "_session": util.UserData.userSession, //. dialokasikan
-              "cmd": "update_data",
-              //"id": _id, //. ignored when *new* in server
-              //"nik": _nik,
-            };
-            util
-                .showAlert(
-                    context, "Update data $nama, are you sure ?", "Confirm")
-                .then((b) {
-              if (b == true) {
-                util.showLoading(context, true);
-                util.httpPost(util.url_api, mRequest).then((data) {
-                  util.showLoading(context, false);
-                  print(data);
-                  var jObject = json.decode(data);
-                  if (jObject != null) {
-                    String vDesc = jObject["desc"];
-                    //String vStatus = jObject["status"].toString();
-                    //String vRetVal = vStatus + "#" + vDesc;
-                    formKey.currentState.reset();
-                    //. return
-                    //Navigator.pop(context, vRetVal);
-                    FocusManager.instance.primaryFocus.unfocus();
-                    showInSnackBar(vDesc);
-                  }
-                });
-              }
-            });*/
-          }
-        },
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            Icon(Icons.cloud_download),
-            SizedBox(width: 9),
-            Text('Proses Gadai')
-          ],
-        ));
-  }
-
-  Widget printButton(context) {
-    return Container(
-        margin: EdgeInsets.all(25.0),
-        child: FlatButton(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-                side: BorderSide(color: Colors.green)),
-            color: Colors.white,
-            textColor: Colors.green,
-            padding: EdgeInsets.all(15.0),
-            splashColor: Colors.grey.shade200,
-            onPressed: () {
-              Navigator.of(context).pop();
-
-              //showInSnackBar(
-              //"Gadai Digital ini masih versi SIMULASI, sehingga data tidak bisa diteruskan ke server.");
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                Icon(Icons.print),
-                SizedBox(width: 9),
-                Text('Cetak Struk')
-              ],
-            )));
-  }
-
-  Widget fotoProduk() {
-    //var _image;
-    final List<Widget> imageSliders = berkas
-        .map((item) => SizedBox(
-              //height: double.infinity,
-              //color: Colors.red,
-              //height: double.infinity,
-              //margin: EdgeInsets.all(5.0),
-
-              child: new Card(
-                  semanticContainer: true,
-                  clipBehavior: Clip.antiAliasWithSaveLayer,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  color: Colors.grey.shade400,
-                  //elevation: 2,
-                  child: Column(children: <Widget>[
-                    Expanded(
-                      child: MeetNetworkImage(
-                        fit: BoxFit.cover,
-                        width: MediaQuery.of(context).size.width,
-                        imageUrl: 'https://infiplus.net/flutter/fotoGadai/' +
-                            ktpID +
-                            '_' +
-                            item.toString() +
-                            '.png',
-                        loadingBuilder: (context) => Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                        errorBuilder: (context, e) => Container(
-                          child: Text('Error appear!'),
-                        ),
-                      ),
-                    ),
-                    ////aRow[0] == null ? 'assets/logos.png' : 'http://infiplus.net/flutter/upload/' + aRow[0] +'_' +item.toString() +'.png'
-                    FlatButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CameraScreen(
-                                    //data: 'data',
-                                    jenisFoto: item.toString(),
-                                    uid: ktpID),
-                              ));
-                        },
-                        icon: Icon(
-                          Icons.add_a_photo,
-                          color: Colors.white,
-                          size: 33,
-                        ),
-                        label: Text('Ambil Foto ',
-                            style:
-                                TextStyle(color: Colors.white, fontSize: 14))),
-                  ])),
-            ))
-        .toList();
-
     return SingleChildScrollView(
         reverse: true,
-        child: Container(
-          child: CarouselSlider(
-            options: CarouselOptions(
-              autoPlay: false,
-              height: MediaQuery.of(context).size.height * 0.3,
-              aspectRatio: 16 / 9,
-              enlargeCenterPage: true,
-              viewportFraction: 0.6,
-              initialPage: 0,
-            ),
-            items: imageSliders,
-          ),
-        ));
-    //endingnya
+        child: Padding(
+            padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: Form(
+                key: formKey, //MENGGUNAKAN GLOBAL KEY
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Container(
+                      child: Column(
+                        children: <Widget>[
+                          SizedBox(height: 50),
+                          (waiting_message == "")
+                              ? Text(
+                                  'Silahkan tekan tombol Scan KTP-el untuk memulai pembacaan.',
+                                  textAlign: TextAlign.center,
+                                )
+                              : Text(''),
+                          SizedBox(height: 20),
+                          Text("=============================="),
+                          Text(
+                              "${waiting_message.toString()}"), //widget.Responsenya.toString()
+                          Text("=============================="),
+                          SizedBox(height: 20),
+                          getImagenBase64('${widget.kPhoto.toString()}'),
+                          SizedBox(height: 20),
+                          /*(widget.knik != null || widget.knik != "")
+                              ? Text("*hidden*")
+                              : Text(''),
+                          Text("${widget.knama.toString()}"),
+                          //Text("Photo ${widget.kPhoto.toString()}"),
+                          //Text("TTD ${widget.kTtd.toString()}"),
+                          Text("Vendor ATT"),
+                          (prefSerialNumber != null || prefSerialNumber != "")
+                              ? Text("Serial Number Ready")
+                              : Text(''),
+                          (prefToken != null || prefToken != "")
+                              ? Text("Token Ready")
+                              : Text(''),*/
+                          //Text(
+                          //'Retrieve data: ${widget.arrKTP}\n $prefSerialNumber '),
+                          SizedBox(height: 40),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
+                                  width: 150,
+                                  height: 50,
+                                  child: ElevatedButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          if (prefReqScan > 5) {
+                                            EasyLoading.showError(
+                                                "Limit scan habis.\nSilahkan clear cache apps\nterlebih dahulu.");
+                                          } else {
+                                            getPref();
+                                            var hasilPref = prefReqScan + 1;
+                                            savePref(hasilPref);
+                                            print("hasil pref $hasilPref");
+                                            _connectRektp();
+                                          }
+                                        });
+                                      },
+                                      child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            Center(
+                                              child: Icon(
+                                                Icons.scanner,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                            ),
+                                            SizedBox(width: 5),
+                                            Text('Scan KTP-el'),
+                                          ]))),
+                              SizedBox(width: 10),
+                            ],
+                          ),
+                          SizedBox(height: 40),
 
-    //SizedBox(height: 15)
-    //],
-    // ))));
+                          //Text('{{Status printer: $printer_status }}'),
+                        ],
+                      ),
+                    )
+                  ],
+                ))));
   }
 
-  Widget _buildChipsGadai(context) {
-    List<Widget> chips = new List();
-    for (int i = 0; i < _pilGadai.length; i++) {
-      ChoiceChip choiceChip = ChoiceChip(
-        selected: _selectedGadai == i,
-        label: Text(_pilGadai[i],
-            style: _selectedGadai == i
-                ? TextStyle(color: Colors.white)
-                : TextStyle(color: Colors.black)),
-        avatar: _selectedGadai == i ? Icon(Icons.check) : null,
-        pressElevation: 5,
-        shape: StadiumBorder(side: BorderSide(color: Colors.green)),
-        backgroundColor: Colors.transparent,
-        selectedColor: Colors.green,
-        onSelected: (bool selected) {
-          setState(() {
-            if (selected) {
-              _selectedGadai = i;
-              print("nik adalah " + _nik.text);
-              print("$i " + _pilGadai[i]);
-              _hargaJual.text = '0';
-              _maxPinjaman.text = '';
-              _nettoBarang.text = '';
-              _selectedGadai == 1
-                  ? _kadarEmas.text = '24'
-                  : _kadarEmas.text = '18';
-              _selectedHP = null;
-              _selectedElektro = null;
-            }
-          });
-        },
-      );
+  void _connectRektp() async => await canLaunch(_url)
+      ? await launch(_url)
+      : throw 'Could not launch $_url';
 
-      chips.add(Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10), child: choiceChip));
-    }
-    return Row(
-      children: chips,
-    );
-  }
-
-  Widget _buildChipsElektro(context) {
-    List<Widget> chips2 = new List();
-    for (int j = 0; j < _merkElektronik.length; j++) {
-      dynamic _pElektro = _merkElektronik[j];
-      ChoiceChip choiceChip = ChoiceChip(
-        selected: _selectedElektro == j,
-        label: Text(_pElektro["merk_elektro"].toString(),
-            style: _selectedElektro == j
-                ? TextStyle(color: Colors.white)
-                : TextStyle(color: Colors.black)),
-        avatar: _selectedElektro == j ? Icon(Icons.check) : null,
-        pressElevation: 5,
-        shape: StadiumBorder(side: BorderSide(color: Colors.green)),
-        backgroundColor: Colors.transparent,
-        selectedColor: Colors.green,
-        onSelected: (bool selected) {
-          setState(() {
-            if (selected) {
-              _selectedElektro = j;
-              print(_pElektro["merk_elektro"].toString());
-            }
-          });
-        },
-      );
-
-      chips2.add(Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10), child: choiceChip));
-    }
-    return Row(
-      children: chips2,
-    );
-  }
-
-  Widget _buildChipsHP(context) {
-    List<Widget> chips3 = new List();
-    for (int k = 0; k < _merkHP.length; k++) {
-      dynamic _pilihanHP = _merkHP[k];
-      ChoiceChip choiceChip = ChoiceChip(
-        selected: _selectedHP == k,
-        label: Text(_pilihanHP["merk_hp"].toString(),
-            style: _selectedHP == k
-                ? TextStyle(color: Colors.white)
-                : TextStyle(color: Colors.black)),
-        avatar: _selectedHP == k ? Icon(Icons.check) : null,
-        pressElevation: 5,
-        shape: StadiumBorder(side: BorderSide(color: Colors.green)),
-        backgroundColor: Colors.transparent,
-        selectedColor: Colors.green,
-        onSelected: (bool selected) {
-          setState(() {
-            if (selected) {
-              _selectedHP = k;
-              print(_pilihanHP["merk_hp"].toString());
-            }
-          });
-        },
-      );
-
-      chips3.add(Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10), child: choiceChip));
-    }
-    return Row(
-      children: chips3,
-    );
-  }
-
-  Widget _buildChipsTenor(context) {
-    List<Widget> chips = new List();
-    for (int m = 0; m < _tenor.length; m++) {
-      if (m > 0) {
-        ChoiceChip choiceChip = ChoiceChip(
-          selected: _selectedTenor == m,
-          label: Text(_tenor[m].toString() + " bulan",
-              style: _selectedTenor == m
-                  ? TextStyle(color: Colors.white)
-                  : TextStyle(color: Colors.black)),
-          avatar: _selectedTenor == m ? Icon(Icons.check) : null,
-          pressElevation: 5,
-          shape: StadiumBorder(side: BorderSide(color: Colors.green)),
-          backgroundColor: Colors.transparent,
-          selectedColor: Colors.green,
-          onSelected: (bool selected) {
-            setState(() {
-              if (selected) {
-                _selectedTenor = m;
-                print("tenor " + _tenor[m].toString());
-                _selectedGadai == 1
-                    ? _kadarEmas.text = '24'
-                    : _kadarEmas.text = '18';
-                _selectedHP = null;
-                _selectedElektro = null;
-              }
-            });
-          },
-        );
-
-        chips.add(Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10), child: choiceChip));
-      }
-    }
-    return Row(
-      children: chips,
-    );
-  }
-
-  Widget changeHarga() {
-    var txtKadarEmas = (_kadarEmas.text).replaceAll(".", "");
-    persentase = _persentase[_selectedGadai];
-    _loadKadarEmas(txtKadarEmas).then((d) {
-      setState(() {
-        dynamic _txtKadar = _kadar[0];
-        kadarEmasnya = double.parse(_txtKadar["harga_gramasi"]);
-        _calculate(persentase, _selectedGadai, kadarEmasnya);
-      });
+  savePref(int reqScan) async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    setState(() {
+      preferences.setInt("jum_req_scan", reqScan);
+      // ignore: deprecated_member_use
+      preferences.commit();
     });
   }
 
-  Widget nikField() {
-    return TextFormField(
-      controller: _nik,
-      keyboardType: TextInputType.number,
-      decoration: new InputDecoration(
-        labelText: 'NIK',
-        hintText: 'Nomor KTP',
-        fillColor: Colors.grey.shade300,
-        filled: true,
-        prefixIcon: const Icon(
-          Icons.credit_card,
-          color: Colors.green,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-      ),
-      validator:
-          validateNik, //validateName ADALAH NAMA FUNGSI PADA FILE validation.dart
-      onSaved: (String value) {
-        //KETIKA LOLOS VALIDASI
-        nik = nik;
-      },
-      onChanged: (value) {
-        ktpID = value;
-      },
-    );
+  getPref() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    setState(() {
+      prefReqScan = preferences.getInt("jum_req_scan");
+    });
   }
 
-  Widget nameField() {
-    return TextFormField(
-      controller: _nama,
-      decoration: new InputDecoration(
-        labelText: 'Nama Lengkap',
-        fillColor: Colors.grey.shade300,
-        filled: true,
-        prefixIcon: const Icon(
-          Icons.person,
-          color: Colors.green,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-      ),
-      validator:
-          validateName, //validateName ADALAH NAMA FUNGSI PADA FILE validation.dart
-      onSaved: (String value) {
-        //KETIKA LOLOS VALIDASI
-        nama =
-            value; //MAKA VARIABLE name AKAN DIISI DENGAN TEXT YANG TELAH DI-INPUT
-      },
-    );
-  }
-
-  Widget tgllahirField() {
-    //MEMBUAT TEXT INPUT
-    return TextFormField(
-      controller: _tglLahir,
-      keyboardType: TextInputType.datetime,
-      decoration: new InputDecoration(
-        labelText: 'Tanggal Lahir',
-        fillColor: Colors.grey.shade300,
-        filled: true,
-        prefixIcon: const Icon(
-          Icons.date_range,
-          color: Colors.green,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-      ),
-      validator:
-          validateTglLahir, //validateName ADALAH NAMA FUNGSI PADA FILE validation.dart
-      onSaved: (String value) {
-        //KETIKA LOLOS VALIDASI
-        tglLahir =
-            value; //MAKA VARIABLE name AKAN DIISI DENGAN TEXT YANG TELAH DI-INPUT
-      },
-    );
-  }
-
-  Widget typeBarangField() {
-    return TextFormField(
-      controller: _typeBarang,
-      inputFormatters: [
-        new LengthLimitingTextInputFormatter(50),
-      ],
-      decoration: new InputDecoration(
-        labelText: 'Type  Barang',
-        hintText: 'Jenis  Barang',
-        fillColor: Colors.grey.shade300,
-        filled: true,
-        prefixIcon: const Icon(
-          Icons.assignment,
-          color: Colors.green,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-      ),
-      validator:
-          validateTypeBarang, //validateName ADALAH NAMA FUNGSI PADA FILE validation.dart
-      onSaved: (String value) {
-        //KETIKA LOLOS VALIDASI
-        typeBarang =
-            value; //MAKA VARIABLE name AKAN DIISI DENGAN TEXT YANG TELAH DI-INPUT
-      },
-    );
-  }
-
-  Widget nettoField() {
-    return TextFormField(
-      controller: _nettoBarang,
-      keyboardType: TextInputType.number,
-      inputFormatters: [
-        new LengthLimitingTextInputFormatter(3),
-      ],
-      decoration: new InputDecoration(
-        labelText: 'Netto (gram)',
-        fillColor: Colors.grey.shade300,
-        filled: true,
-        prefixIcon: const Icon(
-          Icons.card_giftcard,
-          color: Colors.green,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-      ),
-      validator: validateNettoBarang,
-      onChanged: (value) {
-        changeHarga();
-      },
-    );
-  }
-
-  Widget kadarEmasField() {
-    return TextFormField(
-      controller: _kadarEmas,
-      keyboardType: TextInputType.number,
-      inputFormatters: [
-        new LengthLimitingTextInputFormatter(2),
-      ],
-      decoration: new InputDecoration(
-        labelText: 'Kadar Emas (karat)',
-        fillColor: Colors.grey.shade300,
-        filled: true,
-        prefixIcon: const Icon(
-          Icons.data_usage,
-          color: Colors.green,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-      ),
-      validator: validateKadarEmas,
-      onSaved: (String value) {
-        kadarEmas = value;
-      },
-      onChanged: (value) {
-        changeHarga();
-      },
-    );
-  }
-
-  Widget hargaPasarField(_selectedGadai) {
-    return TextFormField(
-      controller: _hargaJual,
-      keyboardType: TextInputType.number,
-      inputFormatters: [
-        new LengthLimitingTextInputFormatter(11),
-        CurrencyTextInputFormatter(
-          locale: 'ID',
-          decimalDigits: 0,
-        )
-      ],
-      decoration: new InputDecoration(
-        labelText: 'Harga Jual Saat ini',
-        hintText: 'Harga Taksiran / Harga Jual',
-        fillColor: Colors.grey.shade300,
-        filled: true,
-        prefixIcon: const Icon(
-          Icons.account_balance_wallet,
-          color: Colors.green,
-        ),
-        prefixText: 'Rp ',
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-      ),
-      validator: validateHargaJual,
-      onChanged: (value) {
-        changeHarga();
-      },
-    );
-  }
-
-  Widget pinjamanField() {
-    return TextFormField(
-      controller: _pinjaman,
-      inputFormatters: [
-        CurrencyTextInputFormatter(
-          locale: 'ID',
-          decimalDigits: 0,
-        )
-      ],
-      keyboardType: TextInputType.number,
-      decoration: new InputDecoration(
-        labelText: 'Jumlah Pinjaman',
-        fillColor: Colors.grey.shade300,
-        filled: true,
-        prefixIcon: const Icon(
-          Icons.account_balance_wallet,
-          color: Colors.green,
-        ),
-        prefixText: 'Rp ',
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-      ),
-      validator: validatePinjaman,
-      onSaved: (String value) {
-        //KETIKA LOLOS VALIDASI
-        pinjaman = value;
-      },
-      onChanged: (value) {
-        _cekPinjaman();
-      },
-    );
-  }
-
-  Widget ketPinjamanMax() {
-    return Container(
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          border: Border.all(
-            color: Colors.grey.shade200,
-            width: 3,
-          ),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          children: <Widget>[
-            AbsorbPointer(
-              child: TextFormField(
-                controller: _maxPinjaman,
-                decoration: new InputDecoration(
-                  labelText: 'Pinjaman Maksimal',
-                  prefixIcon: const Icon(
-                    Icons.monetization_on,
-                    color: Colors.green,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white, width: 2.0),
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colors.grey.shade400, width: 1.0),
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                inputFormatters: [
-                  CurrencyTextInputFormatter(
-                    locale: 'ID',
-                    decimalDigits: 0,
-                  )
-                ],
-                validator: validatePinjamanMax,
-              ),
-            ),
-            //SizedBox(height: 20),
-            /*Text(
-                "Jangka waktu maksimal 4 bulan (120) hari bisa dicicil atau dilunasi kapan saja. \n\nPerkiraan Pinjaman diatas dapat berubah tergantung kondisi dan kelengkapan barang serta harga pasar terkini."),
-          */
-          ],
-        ));
-  }
-
-  Widget ketCicilan() {
-    var rep_pinjaman = _pinjaman.text.replaceAll(".", "");
-    var bungaPinjam = double.parse(rep_pinjaman) * 0.0295 * (_selectedTenor);
-    var totPinjam = double.parse(rep_pinjaman) + _biayaAdmin + bungaPinjam;
-    var cicilan1 = (double.parse(rep_pinjaman) / (_selectedTenor)) +
-        _biayaAdmin +
-        bungaPinjam;
-    var cicilan2 =
-        (double.parse(rep_pinjaman) / (_selectedTenor)) + bungaPinjam;
-    var cicilanNext = _selectedTenor == 0 ? 0 : cicilan2;
-    return Container(
-      width: MediaQuery.of(context).size.width,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        border: Border.all(
-          color: Colors.grey.shade200,
-          width: 10,
-        ),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: new Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    SizedBox(height: 10),
-                    Text("DETAIL\n==============="),
-                    SizedBox(height: 10),
-                    Text("Pinjaman"),
-                    SizedBox(height: 10),
-                    Text("Biaya Admin"),
-                    SizedBox(height: 10),
-                    Text("Bunga Pinjaman (2.95%) "),
-                    SizedBox(height: 10),
-                    Text("Total Pinjaman"),
-                    SizedBox(height: 10),
-                    Text("Cicilan ke-1"),
-                    SizedBox(height: 10),
-                    Text("Cicilan selanjutnya "),
-                    SizedBox(height: 10),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    SizedBox(height: 10),
-                    Text(""),
-                    SizedBox(height: 25),
-                    Text(": Rp " + _pinjaman.text),
-                    SizedBox(height: 10),
-                    Text(": Rp " + formatCurrency.format(_biayaAdmin)),
-                    SizedBox(height: 10),
-                    Text(": Rp " + formatCurrency.format(bungaPinjam)),
-                    SizedBox(height: 10),
-                    Text(": Rp " + formatCurrency.format(totPinjam)),
-                    SizedBox(height: 10),
-                    Text(": Rp " + formatCurrency.format(cicilan1)),
-                    SizedBox(height: 10),
-                    Text(": Rp " + formatCurrency.format(cicilanNext)),
-                    SizedBox(height: 10),
-                  ],
-                )
-              ],
-            ),
-          ]),
-    );
-  }
-
-  void _calculate(double pengali, jenisGadai, kadarEmasnya) {
-    if (jenisGadai < 2) {
-      if (_hargaJual.text.trim().isNotEmpty &&
-          _nettoBarang.text.trim().isNotEmpty) {
-        final netto = (_nettoBarang.text).replaceAll(".", "");
-        //final hargaJualValue = (_hargaJual.text).replaceAll(".", "");
-        double konv_harga = double.parse(netto) * kadarEmasnya;
-        _maxPinjaman.text = (formatCurrency.format(konv_harga)).toString();
-      }
-    } else {
-      if (_hargaJual.text.trim().isNotEmpty) {
-        final hargaJualValue = (_hargaJual.text).replaceAll(".", "");
-        double konv_harga = double.parse(hargaJualValue) * pengali;
-        _maxPinjaman.text = (formatCurrency.format(konv_harga)).toString();
+  Widget getImagenBase64(String thumbnail) {
+    Uint8List _bytes;
+    String placeholder =
+        "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";
+    if (thumbnail.isEmpty)
+      thumbnail = placeholder;
+    else {
+      if (thumbnail.length % 4 > 0) {
+        thumbnail +=
+            '=' * (4 - thumbnail.length % 4); // as suggested by Albert221
       }
     }
+    _bytes = Base64Decoder().convert(thumbnail);
+    return Image.memory(
+      _bytes,
+      width: 100,
+      fit: BoxFit.fitWidth,
+    );
   }
 
-  void _cekPinjaman() {
-    var rep_pinjaman = _pinjaman.text.replaceAll(".", "");
-    var rep_maxPinjaman = _maxPinjaman.text.replaceAll(".", "");
-    if (double.parse(rep_pinjaman) > double.parse(rep_maxPinjaman)) {
-      showInSnackBar("Pinjaman melebihi " + _maxPinjaman.text);
-      _pinjaman.text = 0.toString();
+  _requestApi() async {
+    //String _nik = widget.knik.toString();
+    //String _fullName = widget.knama.toString();
+    String _bornDate = widget.kTglLahir.toString();
+    //String _placeOfBirth = widget.ktempatLahir.toString();
+    String _gender = (widget.kjk == "PEREMPUAN") ? "female" : "male";
+    //String _address = widget.kAlamat.toString();
+    String _province = "";
+    String _city = "";
+    //String _district = widget.kKecamatan.toString();
+    //String _subDistrict = widget.kKelurahan.toString();
+    //String _rt = widget.krt.toString();
+    //String _rw = widget.krw.toString();
+    //String _religion = widget.kAgama.toString();
+    //String _maritalStatus = widget.kStatusKawin.toString();
+    //String _profession = widget.kPekerjaan.toString();
+    // String _citizen = widget.kWarganegara.toString();
+    String _vendor = "ATT";
+    //String _terminalId = "${prefSerialNumber.toString()}";
+    //String _photo = widget.kPhoto.toString();
+    //String _signature = widget.kTtd.toString();
+    String date = _bornDate.toString();
+    final dateList = date.split("-");
+    String txtTgl =
+        (dateList[0].length > 1) ? "${dateList[0]}" : "0${dateList[0]}";
+    String txtBulan =
+        (dateList[1].length > 1) ? "${dateList[1]}" : "0${dateList[1]}";
+    String txtTahun = "${dateList[2]}";
+    String _bod = "$txtTahun-$txtBulan-$txtTgl";
+
+    setState(() {
+      waiting_message = "Send data to API...";
+    });
+
+    final response = await http.post(
+      Uri.parse(util.Api.urlApiPl),
+      headers: {
+        'Authorization': 'Bearer ${widget.txtToken.toString()}',
+      },
+      body: {
+        "nik": "${widget.knik.toString()}",
+        "name": "${widget.knama.toString()}",
+        "bornDate": "${_bod.toString()}",
+        "placeOfBirth": "${widget.ktempatLahir.toString()}",
+        "gender": "${_gender.toString()}",
+        "address": "${widget.kAlamat.toString()}",
+        "rt": "${widget.krt.toString()}",
+        "rw": "${widget.krw.toString()}",
+        "subDistrict": "${widget.kKelurahan.toString()}",
+        "district": "${widget.kKecamatan.toString()}",
+        "religion": "${widget.kAgama.toString()}",
+        "maritalStatus": "${widget.kStatusKawin.toString()}",
+        "profession": "${widget.kPekerjaan.toString()}",
+        "citizen": "${widget.kWarganegara.toString()}",
+        "province": "",
+        "city": "",
+        "photo": "${widget.kPhoto.toString()}",
+        "vendor": "ATT",
+        "terminalId": "${widget.txtSerialNumber.toString()}"
+      },
+    );
+    var keyBody2 =
+        '{"nik": "${widget.knik.toString()}","name": "${widget.knama.toString()}","bornDate": "${_bod.toString()}","placeOfBirth": "${widget.ktempatLahir.toString()}","gender": "${_gender.toString()}", "address": "${widget.kAlamat.toString()}","rt": "${widget.krt.toString()}","rw": "${widget.krw.toString()}","subDistrict": "${widget.kKelurahan.toString()}", "district": "${widget.kKecamatan.toString()}", "religion": "${widget.kAgama.toString()}","maritalStatus": "${widget.kStatusKawin.toString()}","profession": "${widget.kPekerjaan.toString()}","citizen": "${widget.kWarganegara.toString()}", "province": "", "city": "", "photo": "${widget.kPhoto.toString()}","vendor": "ATT","terminalId": "${widget.txtSerialNumber.toString()}"}';
+
+    print("Headers: ${response.headers}");
+    print("Url: ${response.request}");
+    print("Auth: ${response.request.headers}");
+    print("Value:${keyBody2}");
+    print("Body: ${response.body}");
+    //print("nik ${widget.knik.toString()}");
+    setState(() {
+      /*response_message =
+          "Headers: ${response.headers}\n\nUrl: ${response.request}\n\nAuth: ${response.request.headers}\n\nValue:${keyBody2}\n\nBody: ${response.body}\n\n>>${response.statusCode}";
+      */
+    });
+    if (response.statusCode == 200) {
+      var data = jsonDecode(response.body);
+      //print(" respons body : $data");
+      //String qrCode = data['data']['qrCode'];
+      String txtMessages = data['message'];
+      //String txtCode = data['code'].toString();
+      //print("messages $txtCode $txtMessages");
+      setState(() {
+        //dummyData = qrCode.toString();
+        //print("memasukan data ke dummydata $qrCode");
+        waiting_message = "$data";
+      });
+      //_resultQrScan();
+
+    } else {
+      setState(() {
+        waiting_message = "Error Code ${keyBody2} ${response.body}";
+      });
     }
   }
 }
