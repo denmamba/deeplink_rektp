@@ -16,9 +16,6 @@ import 'package:file_lumberdash/file_lumberdash.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _url = 'rektp://read?type=0';
-//const _url = 'rektp://read?log_id=1&package=surveyor://send';
-//rektp://read?type=0
-//'rektp://read?log_id=3';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +29,9 @@ class MyApp extends StatelessWidget {
       title: 'LOG EKTP',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-          brightness: Brightness.light, colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.deepOrange).copyWith(secondary: Colors.orange)),
+          brightness: Brightness.light,
+          colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.deepOrange)
+              .copyWith(secondary: Colors.orange)),
       routes: {
         '/': (_) => LoginPage(),
       },
@@ -146,7 +145,6 @@ class _MyHomePageState extends State<MyHomePage> {
   String printer_status = '';
   int prefReqScan = 0;
 
-
   get imagen => null;
 
   @override
@@ -221,27 +219,8 @@ class _MyHomePageState extends State<MyHomePage> {
                               : Text(''),
                           SizedBox(height: 20),
                           Text("=============================="),
-                          Text(
-                              "${waiting_message.toString()}"), //widget.Responsenya.toString()
+                          Text("${widget.Responsenya.toString()}"),
                           Text("=============================="),
-                          SizedBox(height: 20),
-                          getImagenBase64('${widget.kPhoto.toString()}'),
-                          SizedBox(height: 20),
-                          /*(widget.knik != null || widget.knik != "")
-                              ? Text("*hidden*")
-                              : Text(''),
-                          Text("${widget.knama.toString()}"),
-                          //Text("Photo ${widget.kPhoto.toString()}"),
-                          //Text("TTD ${widget.kTtd.toString()}"),
-                          Text("Vendor ATT"),
-                          (prefSerialNumber != null || prefSerialNumber != "")
-                              ? Text("Serial Number Ready")
-                              : Text(''),
-                          (prefToken != null || prefToken != "")
-                              ? Text("Token Ready")
-                              : Text(''),*/
-                          //Text(
-                          //'Retrieve data: ${widget.arrKTP}\n $prefSerialNumber '),
                           SizedBox(height: 40),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
