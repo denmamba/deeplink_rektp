@@ -9,9 +9,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uni_links/uni_links.dart';
 import 'main.dart';
-import 'package:test_deeplink/models/util.dart' as util;
 // ignore: import_of_legacy_library_into_null_safe
-import 'package:http/http.dart' as http;
 
 class LoginPage extends StatefulWidget {
   final Color backgroundColor = Colors.white;
@@ -142,106 +140,6 @@ class _SplashScreenState extends State<LoginPage> {
 
     await FlutterDeviceIdentifier.requestPermission();
     _serialNumber = await FlutterDeviceIdentifier.serialCode;
-    if (prefSerialNumber != _serialNumber) {
-      err_mess = "Serial number not ready\ntry connect to server.";
-      print("Serial number not ready\ntry connect to server.");
-      cekSerialNumber();
-    } else {
-      err_mess = "Serial number ready.";
-      print("Serial number ready.");
-      //_loadWidget();
-      _requestTokenPl();
-      //initUniLinks();
-    }
-  }
-
-  cekSerialNumber() async {
-    token_mess = "Request serial key...";
-    final response = await http.post(
-      Uri.parse(util.Api.urlSerialNumber),
-      body: {'serial_number': _serialNumber},
-    );
-    print("Headers: ${response.headers}");
-    print("Url: ${response.request}");
-    print("Body: ${response.body}");
-
-    if (response.statusCode == 200) {
-      var data = jsonDecode(response.body);
-      //print("datanya adalah $data");
-      if (data['value'] == 1) {
-        print("datanya lagixx ${data['data'][0]['serial_number']}");
-        String serialNumber = data['data'][0]['serial_number'];
-        String statusDevice = data['data'][0]['status_device'];
-        String registerDate = data['data'][0]['register_date'];
-        print("status serial key $statusDevice");
-        setState(() {
-          savePref(serialNumber, statusDevice, registerDate);
-          getPref();
-          if (prefSerialNumber != _serialNumber) {
-            cariSerialNumber();
-          } else {
-            err_mess = "Serial number ready.";
-            setState(() {
-              _requestTokenPl();
-              //getPref();
-            });
-          }
-        });
-      } else {
-        setState(() {
-          clearPref();
-          //print("mencari... $prefSerialNumber");
-          //print("serial... $_serialNumber");
-          token_mess = "";
-          err_mess =
-              'Please contact developer\nfor request activation.\nSerial No: $_serialNumber ';
-        });
-      }
-    } else {
-      print("datanya adalah kosong");
-    }
-  }
-
-  _requestTokenPl() async {
-    token_mess = "Request token authentication...";
-    final response = await http.post(
-      Uri.parse(util.Api.urlLoginPl),
-      /*headers: {
-        'Authorization':
-            'Basic dGVsa29tOmRhMWMyNWQ4LTM3YzgtNDFiMS1hZmUyLTQyZGQ0ODI1YmZlYQ==',
-      },*/
-      body: {
-        "username": "receptionist.galih@gmail.com",
-        "password": "Galihd70c01"
-      },
-    );
-    var keyBody =
-        '{"username": "receptionist.galih@gmail.com", "password": "Galihd70c01"}';
-
-    print("Headers: ${response.headers}");
-    print("Url: ${response.request}");
-    print("Auth: ${response.request.headers}");
-    print("Value:${keyBody}");
-    print("Body: ${response.body}");
-    print("Body: ${response.statusCode}");
-    if (response.statusCode == 200) {
-      var data = jsonDecode(response.body);
-      //print(" respons body : $data");
-      String txtAuthToken = data['data']['accessToken'];
-      String txtMessages = data['message'];
-      setState(() {
-        savePrefToken(txtAuthToken);
-        //print("token tersimpan ke cookies $txtAuthToken");
-        //print("messages $txtCode $txtMessages");
-        token_mess = "$txtMessages";
-        getPref();
-        initUniLinks();
-      });
-    } else {
-      setState(() {
-        token_mess = "Error Code ${response.statusCode}";
-      });
-    }
   }
 
   savePref(
@@ -299,7 +197,7 @@ class _SplashScreenState extends State<LoginPage> {
             MaterialPageRoute(
                 builder: (BuildContext context) => MyHomePage(
                       arrKTP: "kosong",
-                      //arrDeviceToken: "$deviceTokenData",
+                      /*arrDeviceToken: "$deviceTokenData",
                       knik: "3671066306930002",
                       knama: "DEWI RAHAYU",
                       kTglLahir: "23-06-1993",                 
@@ -319,7 +217,7 @@ class _SplashScreenState extends State<LoginPage> {
                       txtToken: "${prefToken.toString()}",
                       Responsenya: "${txtResponse.toString()}",
                       kPhoto:
-                          "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",
+                          "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",*/
                     )));
       } else {
         //setState(() {

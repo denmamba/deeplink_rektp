@@ -8,11 +8,8 @@ import 'package:test_deeplink/splash.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:test_deeplink/models/util.dart' as util;
 // ignore: import_of_legacy_library_into_null_safe
-import 'package:http/http.dart' as http;
 // ignore: import_of_legacy_library_into_null_safe
-import 'package:permission_handler/permission_handler.dart';
 import 'package:lumberdash/lumberdash.dart';
 import 'package:file_lumberdash/file_lumberdash.dart';
 // ignore: import_of_legacy_library_into_null_safe
@@ -35,9 +32,7 @@ class MyApp extends StatelessWidget {
       title: 'LOG EKTP',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-          brightness: Brightness.light,
-          primarySwatch: Colors.deepOrange,
-          accentColor: Colors.orange),
+          brightness: Brightness.light, colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.deepOrange).copyWith(secondary: Colors.orange)),
       routes: {
         '/': (_) => LoginPage(),
       },
@@ -70,6 +65,7 @@ class MyHomePage extends StatefulWidget {
   final String? kTtd;
   final String? txtSerialNumber;
   final String? txtToken;
+  // ignore: non_constant_identifier_names
   final String? Responsenya;
 
   MyHomePage({
@@ -94,6 +90,7 @@ class MyHomePage extends StatefulWidget {
     this.kWarganegara,
     this.txtSerialNumber,
     this.txtToken,
+    // ignore: non_constant_identifier_names
     this.Responsenya,
     this.kKota,
     this.kPhoto,
@@ -134,6 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // ignore: non_constant_identifier_names
   String waiting_message = '';
+  // ignore: non_constant_identifier_names
   String response_message = '';
   var tampilDaftarBaru;
   var pecahKTP = '';
@@ -148,7 +146,6 @@ class _MyHomePageState extends State<MyHomePage> {
   String printer_status = '';
   int prefReqScan = 0;
 
-  final Permission _permissionGroup = Permission.storage;
 
   get imagen => null;
 
@@ -165,40 +162,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   dataektp() async {
     _requestApi();
-    String _nik = widget.knik.toString();
     String _fullName = widget.knama.toString();
-    String _bornDate = widget.kTglLahir.toString();
-    String _placeOfBirth = widget.ktempatLahir.toString();
-    String _gender = (widget.kjk == "PEREMPUAN") ? "female" : "male";
-    String _address = widget.kAlamat.toString();
-    String _province = "";
-    String _city = "";
-    String _district = widget.kKecamatan.toString();
-    String _subDistrict = widget.kKelurahan.toString();
-    String _rt = widget.krt.toString();
-    String _rw = widget.krw.toString();
-    String _religion = widget.kAgama.toString();
-    String _maritalStatus = widget.kStatusKawin.toString();
-    String _profession = widget.kPekerjaan.toString();
-    String _citizen = widget.kWarganegara.toString();
-    String _vendor = "ATT";
-    String _terminalId = "";
-    String _photo = widget.kPhoto.toString();
-    String _signature = widget.kTtd.toString();
-    String date = _bornDate.toString();
-    final dateList = date.split("-");
-    String txtTgl =
-        (dateList[0].length > 1) ? "${dateList[0]}" : "0${dateList[0]}";
-    String txtBulan =
-        (dateList[1].length > 1) ? "${dateList[1]}" : "0${dateList[1]}";
-    String txtTahun = "${dateList[2]}";
-    String _bod = "$txtTahun-$txtBulan-$txtTgl";
 
     Directory? appDocDir = await getExternalStorageDirectory();
     String appDocPath = appDocDir!.path;
     final currentDate = DateTime.now();
     final fileName =
-        '${currentDate.year}-${currentDate.month}-${currentDate.day}-${currentDate.microsecond}-${_fullName}-logs';
+        '${currentDate.year}-${currentDate.month}-${currentDate.day}-${currentDate.microsecond}-$_fullName-logs';
     putLumberdashToWork(withClients: [
       FileLumberdash(
         filePath: '$appDocPath/$fileName.txt',
@@ -215,25 +185,11 @@ class _MyHomePageState extends State<MyHomePage> {
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text('LOG EKTP DEMO VERSION'),
-        /*actions: [
-          PopupMenuButton<int>(
-            onSelected: (item) => onSelected(context, item),
-            itemBuilder: (context) => [
-              PopupMenuItem<int>(
-                value: 0,
-                child: (printer_status == "Connected")
-                    ? Text('Nonaktifkan Printer')
-                    : Text('Aktifkan Printer'),
-              ),
-            ],
-          )
-        ],*/
       ),
       body: Container(
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Stack(
             children: <Widget>[
-              // 30a5129314f7d1b7//16 digit //12f6a893bc54e1c4 //315a5a789f252eee //_identifier // 'A130360S00300020'
               _formPengajuan(),
             ],
           )),
@@ -338,7 +294,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 ))));
   }
 
+  // ignore: deprecated_member_use
   void _connectRektp() async => await canLaunch(_url)
+      // ignore: deprecated_member_use
       ? await launch(_url)
       : throw 'Could not launch $_url';
 
@@ -385,8 +343,6 @@ class _MyHomePageState extends State<MyHomePage> {
     //String _placeOfBirth = widget.ktempatLahir.toString();
     String _gender = (widget.kjk == "PEREMPUAN") ? "female" : "male";
     //String _address = widget.kAlamat.toString();
-    String _province = "";
-    String _city = "";
     //String _district = widget.kKecamatan.toString();
     //String _subDistrict = widget.kKelurahan.toString();
     //String _rt = widget.krt.toString();
@@ -395,7 +351,6 @@ class _MyHomePageState extends State<MyHomePage> {
     //String _maritalStatus = widget.kStatusKawin.toString();
     //String _profession = widget.kPekerjaan.toString();
     // String _citizen = widget.kWarganegara.toString();
-    String _vendor = "ATT";
     //String _terminalId = "${prefSerialNumber.toString()}";
     //String _photo = widget.kPhoto.toString();
     //String _signature = widget.kTtd.toString();
@@ -412,65 +367,15 @@ class _MyHomePageState extends State<MyHomePage> {
       waiting_message = "Send data to API...";
     });
 
-    final response = await http.post(
-      Uri.parse(util.Api.urlApiPl),
-      headers: {
-        'Authorization': 'Bearer ${widget.txtToken.toString()}',
-      },
-      body: {
-        "nik": "${widget.knik.toString()}",
-        "name": "${widget.knama.toString()}",
-        "bornDate": "${_bod.toString()}",
-        "placeOfBirth": "${widget.ktempatLahir.toString()}",
-        "gender": "${_gender.toString()}",
-        "address": "${widget.kAlamat.toString()}",
-        "rt": "${widget.krt.toString()}",
-        "rw": "${widget.krw.toString()}",
-        "subDistrict": "${widget.kKelurahan.toString()}",
-        "district": "${widget.kKecamatan.toString()}",
-        "religion": "${widget.kAgama.toString()}",
-        "maritalStatus": "${widget.kStatusKawin.toString()}",
-        "profession": "${widget.kPekerjaan.toString()}",
-        "citizen": "${widget.kWarganegara.toString()}",
-        "province": "",
-        "city": "",
-        "photo": "${widget.kPhoto.toString()}",
-        "vendor": "ATT",
-        "terminalId": "${widget.txtSerialNumber.toString()}"
-      },
-    );
     var keyBody2 =
         '{"nik": "${widget.knik.toString()}","name": "${widget.knama.toString()}","bornDate": "${_bod.toString()}","placeOfBirth": "${widget.ktempatLahir.toString()}","gender": "${_gender.toString()}", "address": "${widget.kAlamat.toString()}","rt": "${widget.krt.toString()}","rw": "${widget.krw.toString()}","subDistrict": "${widget.kKelurahan.toString()}", "district": "${widget.kKecamatan.toString()}", "religion": "${widget.kAgama.toString()}","maritalStatus": "${widget.kStatusKawin.toString()}","profession": "${widget.kPekerjaan.toString()}","citizen": "${widget.kWarganegara.toString()}", "province": "", "city": "", "photo": "${widget.kPhoto.toString()}","vendor": "ATT","terminalId": "${widget.txtSerialNumber.toString()}"}';
 
-    print("Headers: ${response.headers}");
-    print("Url: ${response.request}");
-    print("Auth: ${response.request.headers}");
-    print("Value:${keyBody2}");
-    print("Body: ${response.body}");
+    print("Value:$keyBody2");
     //print("nik ${widget.knik.toString()}");
     setState(() {
       /*response_message =
           "Headers: ${response.headers}\n\nUrl: ${response.request}\n\nAuth: ${response.request.headers}\n\nValue:${keyBody2}\n\nBody: ${response.body}\n\n>>${response.statusCode}";
       */
     });
-    if (response.statusCode == 200) {
-      var data = jsonDecode(response.body);
-      //print(" respons body : $data");
-      //String qrCode = data['data']['qrCode'];
-      String txtMessages = data['message'];
-      //String txtCode = data['code'].toString();
-      //print("messages $txtCode $txtMessages");
-      setState(() {
-        //dummyData = qrCode.toString();
-        //print("memasukan data ke dummydata $qrCode");
-        waiting_message = "$data";
-      });
-      //_resultQrScan();
-
-    } else {
-      setState(() {
-        waiting_message = "Error Code ${keyBody2} ${response.body}";
-      });
-    }
   }
 }
