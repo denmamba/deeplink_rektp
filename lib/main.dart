@@ -14,6 +14,7 @@ import 'package:lumberdash/lumberdash.dart';
 import 'package:file_lumberdash/file_lumberdash.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 const _url = 'rektp://read?type=0';
 
@@ -111,22 +112,22 @@ class _MyHomePageState extends State<MyHomePage> {
   String ktpID = '0';
   String kodesdb = '';
   late String nokunci;
-  late String nik;
+  String nik = '3671066307910002';
   late String txtSDBMaster;
   late String txtKunciMaster;
-  String nama = '';
-  String alamat = '';
-  String jk = '';
-  String tempatLahir = '';
-  String tglLahir = '';
-  String rt = '';
-  String rw = '';
-  String kelurahan = '';
-  String kecamatan = '';
-  String agama = '';
-  String statusKawin = '';
-  String pekerjaan = '';
-  String wargaNegara = '';
+  String nama = 'WIDYA NINGSIH';
+  String alamat = 'JL SEKTOR VII NO. 221';
+  String jk = 'PEREMPUAN';
+  String tempatLahir = 'TANGERANG';
+  String tglLahir = '23-07-1991';
+  String rt = '002';
+  String rw = '008';
+  String kelurahan = 'SUDIMARA JAYA';
+  String kecamatan = 'CILEDUG';
+  String agama = 'ISLAM';
+  String statusKawin = 'BELUM KAWIN';
+  String pekerjaan = 'KARYAWAN SWASTA';
+  String wargaNegara = 'WNI';
 
   // ignore: non_constant_identifier_names
   String waiting_message = '';
@@ -172,7 +173,8 @@ class _MyHomePageState extends State<MyHomePage> {
         filePath: '$appDocPath/$fileName.txt',
       ),
     ]);
-    print('save file to $appDocPath/$fileName.txt');
+    debugPrint('save file to $appDocPath/$fileName.txt');
+    debugPrint('widget arr KTP : ${widget.arrKTP}');
     logMessage('${widget.arrKTP.toString()}');
   }
 
@@ -239,7 +241,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                             getPref();
                                             var hasilPref = prefReqScan + 1;
                                             savePref(hasilPref);
-                                            print("hasil pref $hasilPref");
+                                            debugPrint("hasil pref hhhh $hasilPref");
                                             _connectRektp();
                                           }
                                         });
@@ -264,7 +266,6 @@ class _MyHomePageState extends State<MyHomePage> {
                             ],
                           ),
                           SizedBox(height: 40),
-
                           //Text('{{Status printer: $printer_status }}'),
                         ],
                       ),
@@ -291,7 +292,8 @@ class _MyHomePageState extends State<MyHomePage> {
   getPref() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     setState(() {
-      prefReqScan = preferences.getInt("jum_req_scan");
+      prefReqScan = preferences.getInt("jum_req_scan")!;
+      debugPrint('prefReqScan : $prefReqScan');
     });
   }
 
@@ -316,22 +318,23 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   _requestApi() async {
-    //String _nik = widget.knik.toString();
-    //String _fullName = widget.knama.toString();
+    debugPrint('sending to API');
+    String _nik = widget.knik.toString();
+    String _fullName = widget.knama.toString();
     String _bornDate = widget.kTglLahir.toString();
-    //String _placeOfBirth = widget.ktempatLahir.toString();
-    String _gender = (widget.kjk == "PEREMPUAN") ? "female" : "male";
-    //String _address = widget.kAlamat.toString();
-    //String _district = widget.kKecamatan.toString();
-    //String _subDistrict = widget.kKelurahan.toString();
-    //String _rt = widget.krt.toString();
-    //String _rw = widget.krw.toString();
-    //String _religion = widget.kAgama.toString();
-    //String _maritalStatus = widget.kStatusKawin.toString();
-    //String _profession = widget.kPekerjaan.toString();
-    // String _citizen = widget.kWarganegara.toString();
+    String _placeOfBirth = widget.ktempatLahir.toString();
+    String _gender = widget.kjk.toString();
+    String _address = widget.kAlamat.toString();
+    String _district = widget.kKecamatan.toString();
+    String _subDistrict = widget.kKelurahan.toString();
+    String _rt = widget.krt.toString();
+    String _rw = widget.krw.toString();
+    String _religion = widget.kAgama.toString();
+    String _maritalStatus = widget.kStatusKawin.toString();
+    String _profession = widget.kPekerjaan.toString();
+    String _citizen = widget.kWarganegara.toString();
     //String _terminalId = "${prefSerialNumber.toString()}";
-    //String _photo = widget.kPhoto.toString();
+    String _photo = widget.kPhoto.toString();
     //String _signature = widget.kTtd.toString();
     String date = _bornDate.toString();
     final dateList = date.split("-");
@@ -341,16 +344,49 @@ class _MyHomePageState extends State<MyHomePage> {
         (dateList[1].length > 1) ? "${dateList[1]}" : "0${dateList[1]}";
     String txtTahun = "${dateList[2]}";
     String _bod = "$txtTahun-$txtBulan-$txtTgl";
+    DateTime now = DateTime.now();
 
     setState(() {
       waiting_message = "Send data to API...";
     });
 
-    var keyBody2 =
-        '{"nik": "${widget.knik.toString()}","name": "${widget.knama.toString()}","bornDate": "${_bod.toString()}","placeOfBirth": "${widget.ktempatLahir.toString()}","gender": "${_gender.toString()}", "address": "${widget.kAlamat.toString()}","rt": "${widget.krt.toString()}","rw": "${widget.krw.toString()}","subDistrict": "${widget.kKelurahan.toString()}", "district": "${widget.kKecamatan.toString()}", "religion": "${widget.kAgama.toString()}","maritalStatus": "${widget.kStatusKawin.toString()}","profession": "${widget.kPekerjaan.toString()}","citizen": "${widget.kWarganegara.toString()}", "province": "", "city": "", "photo": "${widget.kPhoto.toString()}","vendor": "ATT","terminalId": "${widget.txtSerialNumber.toString()}"}';
-
-    print("Value:$keyBody2");
+    // var keyBody2 =
+    //     '{"nik": "${widget.knik.toString()}","name": "${widget.knama.toString()}","bornDate": "${_bod.toString()}","placeOfBirth": "${widget.ktempatLahir.toString()}","gender": "${_gender.toString()}", "address": "${widget.kAlamat.toString()}","rt": "${widget.krt.toString()}","rw": "${widget.krw.toString()}","subDistrict": "${widget.kKelurahan.toString()}", "district": "${widget.kKecamatan.toString()}", "religion": "${widget.kAgama.toString()}","maritalStatus": "${widget.kStatusKawin.toString()}","profession": "${widget.kPekerjaan.toString()}","citizen": "${widget.kWarganegara.toString()}", "province": "", "city": "", "photo": "${widget.kPhoto.toString()}","vendor": "ATT","terminalId": "${widget.txtSerialNumber.toString()}"}';
+    //
+    // debugPrint("Value iii :$keyBody2");
     //print("nik ${widget.knik.toString()}");
+
+    try {
+      var uri = Uri.parse("https://inovbaba.com/sms-manager/add_data_ktp.php");
+      var request = http.MultipartRequest("POST", uri);
+
+      request.fields['nik'] = _nik;
+      request.fields['nama'] = _fullName;
+      request.fields['tempat_lahir'] = _placeOfBirth;
+      request.fields['tgl_lahir'] = _bornDate;
+      request.fields['jk'] = _gender;
+      request.fields['alamat'] = _address;
+      request.fields['rt'] = _rt;
+      request.fields['rw'] = _rw;
+      request.fields['kelurahan'] = _subDistrict;
+      request.fields['kecamatan'] = _district;
+      request.fields['agama'] = _religion;
+      request.fields['status_kawin'] = _maritalStatus;
+      request.fields['pekerjaan'] = _profession;
+      request.fields['warga_negara'] = _citizen;
+      request.fields['foto_ktp'] = _photo;
+      request.fields['dibuat_tanggal'] = now.toString();
+
+      var res = await request.send();
+
+      if (res.statusCode == 200) {
+        debugPrint('bisa euy');
+        debugPrint('data : ${request.fields}');
+      }
+    } catch (e) {
+      debugPrint('error $e');
+    }
+
     setState(() {
       /*response_message =
           "Headers: ${response.headers}\n\nUrl: ${response.request}\n\nAuth: ${response.request.headers}\n\nValue:${keyBody2}\n\nBody: ${response.body}\n\n>>${response.statusCode}";

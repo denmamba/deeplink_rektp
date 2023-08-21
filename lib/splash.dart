@@ -147,10 +147,10 @@ class _SplashScreenState extends State<LoginPage> {
   getPref() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     setState(() {
-      prefSerialNumber = preferences.getString("pref_serialNumber");
-      prefStatusDevice = preferences.getString('pref_statusDevice');
-      prefRegisterDate = preferences.getString("pref_registerDate");
-      prefToken = preferences.getString("pref_authToken");
+      prefSerialNumber = preferences.getString("pref_serialNumber")!;
+      prefStatusDevice = preferences.getString('pref_statusDevice')!;
+      prefRegisterDate = preferences.getString("pref_registerDate")!;
+      prefToken = preferences.getString("pref_authToken")!;
     });
   }
 
@@ -187,6 +187,27 @@ class _SplashScreenState extends State<LoginPage> {
             MaterialPageRoute(
                 builder: (BuildContext context) => MyHomePage(
                       arrKTP: "kosong",
+                  kuid: "1",
+                  knik: "3671066307910002",
+                  knama: "WIDYA NINGSIH",
+                  ktempatLahir: "TANGERANG",
+                  kTglLahir: "23-07-1991",
+                  kjk: "PEREMPUAN",
+                  kAlamat: "JL SEKTOR VII NO. 221",
+                  krt: "002",
+                  krw: "008",
+                  kKelurahan: "SUDIMARA JAYA",
+                  kKecamatan: "CILEDUG",
+                  kAgama: "ISLAM",
+                  kStatusKawin: "BELUM KAWIN",
+                  kPekerjaan: "KARYAWAN SWASTA",
+                  kWarganegara: "WNI",
+                  txtSerialNumber: "000",
+                  txtToken: "tes token",
+                  Responsenya: "200",
+                  kKota: "tes kota",
+                  kPhoto: "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\u003d",
+                  kTtd: "tes ttd",
                     )));
       } else {
         //setState(() {

@@ -14,7 +14,7 @@ description: Aplikasi Add on REKTP untuk test API ktp elektronik yang di scan. C
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.18.0 <3.0.0"
+  sdk: '>=3.0.2 <4.0.0'
 
 dependencies:
   flutter:
@@ -22,21 +22,21 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^0.1.2
-  http: ^0.11.3+16 #0.13.0
+  cupertino_icons: ^1.0.5
+  http: ^1.1.0
   #shared_preferences: ^2.0.0
   #path: ^1.6.4
-  path_provider: ^2.0.0
+  path_provider: ^2.1.0
   uni_links: ^0.5.1
   #sqflite: ^2.0.0
-  url_launcher: ^6.1.11
-  unique_identifier: ^0.2.2
+  url_launcher: ^6.1.12
+  unique_identifier: ^0.3.0
   flutter_device_identifier: ^0.0.1
-  flutter_easyloading: ^3.0.3
-  intl: ^0.17.0
-  permission_handler: ^8.0.0
+  flutter_easyloading: ^3.0.5
+  intl: ^0.18.1
+  permission_handler: ^10.4.3
   file_lumberdash: ^1.0.0
-  shared_preferences: ^0.5.3+4
+  shared_preferences: ^2.2.0
 
 dev_dependencies:
   flutter_test:
