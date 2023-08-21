@@ -335,7 +335,7 @@ class _MyHomePageState extends State<MyHomePage> {
     String _citizen = widget.kWarganegara.toString();
     //String _terminalId = "${prefSerialNumber.toString()}";
     String _photo = widget.kPhoto.toString();
-    //String _signature = widget.kTtd.toString();
+    String _signature = widget.kTtd.toString();
     String date = _bornDate.toString();
     final dateList = date.split("-");
     String txtTgl =
@@ -375,6 +375,7 @@ class _MyHomePageState extends State<MyHomePage> {
       request.fields['pekerjaan'] = _profession;
       request.fields['warga_negara'] = _citizen;
       request.fields['foto_ktp'] = _photo;
+      request.fields['tanda_tangan'] = _signature;
       request.fields['dibuat_tanggal'] = now.toString();
 
       var res = await request.send();
