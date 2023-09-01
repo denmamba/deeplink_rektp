@@ -112,22 +112,22 @@ class _MyHomePageState extends State<MyHomePage> {
   String ktpID = '0';
   String kodesdb = '';
   late String nokunci;
-  String nik = '3671066307910002';
+  String nik = '';
   late String txtSDBMaster;
   late String txtKunciMaster;
-  String nama = 'WIDYA NINGSIH';
-  String alamat = 'JL SEKTOR VII NO. 221';
-  String jk = 'PEREMPUAN';
-  String tempatLahir = 'TANGERANG';
-  String tglLahir = '23-07-1991';
-  String rt = '002';
-  String rw = '008';
-  String kelurahan = 'SUDIMARA JAYA';
-  String kecamatan = 'CILEDUG';
-  String agama = 'ISLAM';
-  String statusKawin = 'BELUM KAWIN';
-  String pekerjaan = 'KARYAWAN SWASTA';
-  String wargaNegara = 'WNI';
+  String nama = '';
+  String alamat = '';
+  String jk = '';
+  String tempatLahir = '';
+  String tglLahir = '';
+  String rt = '';
+  String rw = '';
+  String kelurahan = '';
+  String kecamatan = '';
+  String agama = '';
+  String statusKawin = '';
+  String pekerjaan = '';
+  String wargaNegara = '';
 
   // ignore: non_constant_identifier_names
   String waiting_message = '';
@@ -241,7 +241,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                             getPref();
                                             var hasilPref = prefReqScan + 1;
                                             savePref(hasilPref);
-                                            debugPrint("hasil pref hhhh $hasilPref");
+                                            debugPrint(
+                                                "hasil pref hhhh $hasilPref");
                                             _connectRektp();
                                           }
                                         });
